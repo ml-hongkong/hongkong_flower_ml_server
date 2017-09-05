@@ -6,23 +6,20 @@ import requests
 import shutil
 import tempfile
 from os.path import join
-from model import predict
+from model.dummy import predict
 
-HOST = '0.0.0.0'
-PORT = 22222
-ENDPOINT = 'https://127.0.0.1/api/v0/finish'
-
+from config import HOST, PORT, ENDPOINT
 
 def log(*arg):
     t = '{0:%Y-%m-%d %H:%M:%S}'.format(datetime.datetime.now())
     print(t, *arg)
 
 
-## job queue
+# job queue
 jobQueue = Queue()
 
 
-## worker
+# worker
 def worker():
     log('Running worker')
     while True:
@@ -30,8 +27,8 @@ def worker():
         log('processing job:', job)
         try:
             process(job)
-        except:
-            pass
+        except Exception as e:
+            log('error', e)
         log('finished job:', job)
 
 
@@ -43,26 +40,32 @@ def process(job):
     r = requests.get(url, verify=False, timeout=10, stream=True)
     log('return status:', r.status_code)
     if r.status_code == 200:
+
+        # save file
         tempdir = tempfile.gettempdir()
         path = join(tempdir, 'image')
         log('saving tmp image to', path)
         with open(path, 'wb') as f:
             r.rawdecode_content = True
             shutil.copyfileobj(r.raw, f)
+
+        # classify
         result = predict([path])
+
         log('reply', job_id)
         requests.post(ENDPOINT, json={
             'job_id': job_id,
             'result': result
         })
     else:
-        ## post without result = failed
+        # post without result = failed
+        log('reply fail')
         request.post(ENDPOINT, json={
             'job_id': job_id
         })
 
 
-## background thread for processing
+# background thread for processing
 Thread(target=worker).start()
 
 
