@@ -28,13 +28,15 @@ def load_imgs(paths):
     return preprocess_input(np.array(x))
 
 model = load_model(model_path)
+# for threading
+model._make_predict_function()
 
 def predict(paths):
     y = model.predict(load_imgs(paths))
     ans_ix = y.argsort(1)[:, -5:]
     ans = [[{
         'class': classes[int(remap[i])],
-        'score': y[j][i]
+        'score': float(y[j][i])
     } for i in ans_ix[j]] for j in range(len(ans_ix))]
 
     return ans

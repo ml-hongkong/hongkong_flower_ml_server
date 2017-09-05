@@ -6,7 +6,8 @@ import requests
 import shutil
 import tempfile
 from os.path import join
-from model.dummy import predict
+#from model.dummy import predict
+from model.resnet50 import predict
 
 from config import HOST, PORT, ENDPOINT
 
@@ -55,7 +56,7 @@ def process(job):
         log('reply', job_id)
         requests.post(ENDPOINT, json={
             'job_id': job_id,
-            'result': result
+            'result': result[0]
         })
     else:
         # post without result = failed
@@ -73,8 +74,11 @@ Thread(target=worker).start()
 def index():
     json = request.json
     log('received job:', json)
-    jobQueue.put(json)
+    jobQueue.put(json, block=True)
 
 
-print(f'Listening on port {PORT}')
 run(host=HOST, port=PORT, reloader=False)
+
+
+
+
