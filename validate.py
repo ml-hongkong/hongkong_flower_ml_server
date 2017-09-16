@@ -20,4 +20,4 @@ for dir in ['valid', 'test', 'train']:
             if remap[x] == class_ix:
                 correct += 1
 
-    print(f'{type}: {correct / total}')
+    print(f'{dir}: {correct / total}')
